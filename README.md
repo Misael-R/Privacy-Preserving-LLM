@@ -1,7 +1,7 @@
 ## **Dissertation: Privacy-Preserving Multimodal LLM Agent for Social Engineering Detection**
 ***Developed by: Misael Rivera, MSc. Candidate***
 
-***Attributions: Dongzhu Liu, PhD., Juan Pablo Mejía, BEng.***
+***Acknowledgements: Dongzhu Liu, PhD., Juan Pablo Mejía, BEng.***
 
 ### Topic Intersection: 
 Distributed Multimodal Learning + GenAI + Differential Privacy
