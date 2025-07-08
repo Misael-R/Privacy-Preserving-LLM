@@ -1,12 +1,18 @@
 # app.py
+import os
 
 import streamlit as st
 import joblib
+
+# from scripts.train_model import vectorizer
 from utils.preprocessing import clean_text
 
 # Load model and vectorizer
-clf = joblib.load('models/baseline_model.pkl')
-vectorizer = joblib.load('models/vectorizer.pkl')
+clf_path = os.getcwd()
+vectorizer_path = os.path.join(clf_path, 'models', 'vectorizer.pkl')
+clf_path = os.path.join(clf_path, 'models', 'baseline_model.pkl')
+clf = joblib.load(clf_path)
+vectorizer = joblib.load(vectorizer_path)
 
 # Streamlit UI
 st.set_page_config(page_title="LLM Email Threat Detector", layout="centered")
@@ -22,14 +28,14 @@ if st.button("Analyze"):
     else:
         cleaned = clean_text(email_input)
         vect = vectorizer.transform([cleaned])
-        pred = clf.predict(vect)[0]
-        prob = clf.predict_proba(vect)[0][pred]
+        spam_prediction = clf.predict(vect)[0]
+        prob = clf.predict_proba(vect)[0][spam_prediction]
 
-        label = "⚠️ Suspicious (Spam / Social Engineering)" if pred == 1 else "✅ Safe / Normal"
+        label = "Suspicious (Spam / Social Engineering)" if spam_prediction == 1 else "Safe / Normal"
         st.markdown(f"### Prediction: {label}")
         st.markdown(f"**Confidence:** `{prob:.3f}`")
 
-        if pred == 1:
+        if spam_prediction == 1:
             st.error("This email appears malicious. Consider reporting it.")
         else:
             st.success("This email seems safe.")
