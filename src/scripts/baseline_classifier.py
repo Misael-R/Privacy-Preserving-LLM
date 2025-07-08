@@ -1,4 +1,4 @@
-# Step 2: Train a baseline classifier (Logistic Regression) and define a prediction function
+# Step 2: Train a baseline classifier (Logistic Regression) and define a spam_prediction function
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
@@ -11,7 +11,7 @@ clf.fit(X_train_vec, y_train)
 y_pred = clf.predict(X_test_vec)
 report = classification_report(y_test, y_pred, output_dict=True)
 
-# Create a prediction function
+# Create a spam_prediction function
 def predict_email_class(text):
     cleaned = clean_text(text)
     vectorized = vectorizer.transform([cleaned])
