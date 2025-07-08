@@ -4,7 +4,7 @@ import pandas as pd
 import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_extraction.text import TfidfVectorizer
-from preprocessing import clean_text, clean_text2
+from preprocessing import clean_text
 
 # splits = {'train': 'train.csv', 'test': 'test.csv'}
 # df = pd.read_csv("hf://datasets/adamlouly/enron_spam_data/" + splits["train"])
