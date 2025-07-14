@@ -15,5 +15,5 @@ joblib.dump(model, "../models/baseline_model.pkl")
 
 # Evaluate on test set
 y_pred = model.predict(X_test)
-print("\n📊 Baseline Evaluation on Test Set:")
+print("\nBaseline Evaluation on Test Set:")
 print(classification_report(y_test, y_pred))
