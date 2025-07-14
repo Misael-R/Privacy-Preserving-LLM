@@ -17,3 +17,8 @@ joblib.dump(model, "../models/baseline_model.pkl")
 y_pred = model.predict(X_test)
 print("\nBaseline Evaluation on Test Set:")
 print(classification_report(y_test, y_pred))
+
+with open("../results/baseline_classifier_results.txt", "w") as f:
+    f.write("\nBaseline Evaluation on Test Set:")
+    f.write("=== Baseline Model ===\n")
+    f.write(classification_report(y_test, y_pred))
