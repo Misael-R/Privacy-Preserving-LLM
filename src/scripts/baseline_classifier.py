@@ -2,21 +2,18 @@
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
+import joblib
+from preprocessing import preprocess_enron
 
-# Train logistic regression
-clf = LogisticRegression()
-clf.fit(X_train_vec, y_train)
+X_train, X_val, X_test, y_train, y_val, y_test = preprocess_enron()
 
-# Evaluate on test data
-y_pred = clf.predict(X_test_vec)
-report = classification_report(y_test, y_pred, output_dict=True)
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
 
-# Create a spam_prediction function
-def predict_email_class(text):
-    cleaned = clean_text(text)
-    vectorized = vectorizer.transform([cleaned])
-    prediction = clf.predict(vectorized)[0]
-    probability = clf.predict_proba(vectorized)[0][prediction]
-    return 'Spam/Social Engineering' if prediction == 1 else 'Normal', round(probability, 3)
+# Save model
+joblib.dump(model, "../models/baseline_model.pkl")
 
-report, predict_email_class("Dear user, your account was flagged for suspicious activity.")
+# Evaluate on test set
+y_pred = model.predict(X_test)
+print("\n📊 Baseline Evaluation on Test Set:")
+print(classification_report(y_test, y_pred))
