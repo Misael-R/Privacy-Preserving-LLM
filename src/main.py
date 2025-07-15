@@ -5,12 +5,12 @@ import streamlit as st
 import joblib
 
 # from scripts.train_model import vectorizer
-from utils.preprocessing import clean_text
+# from utils.preprocessing import clean_text
 
 # Load model and vectorizer
 clf_path = os.getcwd()
-vectorizer_path = os.path.join(clf_path, 'models', 'vectorizer.pkl')
-clf_path = os.path.join(clf_path, 'models', 'baseline_model.pkl')
+vectorizer_path = os.path.join(clf_path, 'src', 'models', 'vectorizer.pkl')
+clf_path = os.path.join(clf_path, 'src', 'models', 'baseline_model.pkl')
 clf = joblib.load(clf_path)
 vectorizer = joblib.load(vectorizer_path)
 
@@ -26,7 +26,8 @@ if st.button("Analyze"):
     if not email_input.strip():
         st.warning("Please paste an email for analysis.")
     else:
-        cleaned = clean_text(email_input)
+        # cleaned = clean_text(email_input)
+        cleaned = email_input
         vect = vectorizer.transform([cleaned])
         spam_prediction = clf.predict(vect)[0]
         prob = clf.predict_proba(vect)[0][spam_prediction]
