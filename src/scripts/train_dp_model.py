@@ -10,6 +10,12 @@ import numpy as np
 
 from preprocessing import preprocess_enron
 from torch_model import PrivacyAwareEmailClassifier
+import pandas as pd
+import matplotlib.pyplot as plt
+
+epsilon_logs = []
+
+
 
 X_train, X_val, X_test, y_train, y_val, y_test = preprocess_enron()
 
@@ -31,8 +37,7 @@ model, optimizer, train_loader = privacy_engine.make_private(
     max_grad_norm=1.0,
 )
 
-# Training loop
-for epoch in range(5):
+for epoch in range(10):
     model.train()
     for batch in train_loader:
         x, y = batch
@@ -42,11 +47,41 @@ for epoch in range(5):
         loss.backward()
         optimizer.step()
 
-    epsilon, best_alpha = privacy_engine.get_privacy_spent(delta=1e-5)
-    print(f"Epoch {epoch + 1} - epsilon = {epsilon:.2f}, δ = 1e-5")
+    epsilon = privacy_engine.get_epsilon(delta=1e-5)
+
+    # Evaluate on validation set
+    model.eval()
+    with torch.no_grad():
+        val_logits = model(torch.tensor(X_val.toarray()).float())
+        val_preds = torch.argmax(val_logits, dim=1).numpy()
+        val_accuracy = (val_preds == y_val.values).mean()
+
+    epsilon_logs.append({
+        "epoch": epoch + 1,
+        "epsilon": epsilon,
+        "accuracy": val_accuracy
+    })
+
+    print(f"Epoch {epoch + 1} - epsilon = {epsilon:.2f}, Accuracy = {val_accuracy:.4f}")
+
+# Save epsilon logs as CSV
+log_df = pd.DataFrame(epsilon_logs)
+log_df.to_csv("../results/epsilon_accuracy_log.csv", index=False)
+
+# Plot ε vs accuracy
+plt.figure(figsize=(8, 5))
+plt.plot(log_df["epsilon"], log_df["accuracy"], marker="o", linestyle="-", color="blue", label="Accuracy")
+plt.xlabel("Privacy Budget (epsilon)", fontsize=12)
+plt.ylabel("Validation Accuracy", fontsize=12)
+plt.title("Privacy vs Accuracy", fontsize=14)
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.savefig("../results/epsilon_vs_accuracy.png")
+
 
 # Save model
-torch.save(model.state_dict(), "models/private_model.pt")
+torch.save(model.state_dict(), "../models/private_model.pt")
 
 # Evaluation
 model.eval()
@@ -62,7 +97,7 @@ print(classification_report(y_test_tensor, y_preds))
 
 # Save metrics and epsilon
 with open("../results/metrics.txt", "w") as f:
-    f.write(f"Privacy Budget: epsilon = {epsilon:.2f}, δ = 1e-5\n\n")
+    f.write(f"Privacy Budget: epsilon = {epsilon:.2f}, delta = 1e-5\n\n")
     f.write("=== Baseline Model ===\n")
     f.write("=== DP Model ===\n")
     f.write(classification_report(y_test_tensor, y_preds))
