@@ -1,3 +1,5 @@
+import os.path
+
 import streamlit as st
 import torch
 import joblib
@@ -8,14 +10,23 @@ from models.torch_model import PrivacyAwareEmailClassifier
 from utils.preprocessing import clean_text
 
 # Load models and vectorizer
-vectorizer = joblib.load("models/vectorizer.pkl")
+vect_path = os.path.join(os.path.dirname(__file__), "models", "vectorizer.pkl")
+vectorizer = joblib.load(vect_path)
 
 # Load baseline model
-baseline_model = joblib.load("models/baseline_model.pkl")
+baseline_path = os.path.join(os.path.dirname(__file__), "models", "baseline_model.pkl")
+baseline_model = joblib.load(baseline_path)
 
 # Load privacy-preserving model
+torch_model_path = os.path.join(os.path.dirname(__file__), "models", "private_model.pt")
 torch_model = PrivacyAwareEmailClassifier(input_dim=2000)
-torch_model.load_state_dict(torch.load("models/private_model.pt", map_location=torch.device("cpu")))
+
+# Fix loading for Opacus-trained models
+state_dict = torch.load(torch_model_path, map_location=torch.device("cpu"))
+# Remove "_module." prefix added by Opacus
+new_state_dict = {k.replace("_module.", ""): v for k, v in state_dict.items()}
+torch_model.load_state_dict(new_state_dict)
+# torch_model.load_state_dict(torch.load(torch_model_path, map_location=torch.device("cpu")))
 torch_model.eval()
 
 st.set_page_config(page_title="Email Threat Detector", layout="centered")
