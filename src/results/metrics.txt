@@ -1,12 +1,12 @@
-Privacy Budget: ε = 0.42, δ = 1e-5
+Privacy Budget: epsilon = 0.59, delta = 1e-5
 
 === Baseline Model ===
 === DP Model ===
               precision    recall  f1-score   support
 
-           0       0.87      0.97      0.92      1647
-           1       0.99      0.94      0.96      4015
+           0       0.96      0.96      0.96      1647
+           1       0.99      0.98      0.98      4015
 
-    accuracy                           0.95      5662
-   macro avg       0.93      0.95      0.94      5662
-weighted avg       0.95      0.95      0.95      5662
+    accuracy                           0.98      5662
+   macro avg       0.97      0.97      0.97      5662
+weighted avg       0.98      0.98      0.98      5662
