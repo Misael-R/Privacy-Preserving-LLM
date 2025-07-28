@@ -15,204 +15,143 @@ This project implements a **Privacy-Preserving Multimodal LLM Agent for Social E
 
 > **Goal:** Enable privacy-aware AI that detects spam/social engineering attacks, while respecting user data confidentiality.
 
+
+## Table of Contents
+
+- [Motivation](#motivation)
+- [Project Objectives](#project-objectives)
+- [Architecture Overview](#architecture-overview)
+- [Installation](#installation)
+- [Running the App Locally](#running-the-app-locally)
+- [File Structure](#file-structure)
+- [Acknowledgements](#acknowledgements)
+- [License](#license)
+
 ---
 
-## Project Structure
+## Motivation
+
+Social engineering attacks are becoming more frequent and sophisticated. As these attacks often exploit private and sensitive email content, it's vital to ensure that detection models do not compromise user privacy. This project introduces a privacy-preserving solution using differential privacy, making it suitable for real-world deployment in sensitive environments such as corporate email gateways or personal assistants.
+
+---
+
+## Project Objectives
+
+- Train a robust classifier to detect spam and socially engineered messages using the Enron dataset.
+- Apply differential privacy mechanisms (via [Opacus](https://opacus.ai/)) to ensure training does not leak sensitive data.
+- Build an interactive web application for real-time email threat analysis.
+- Log and visualize the trade-off between privacy budget (ε) and model performance.
+
+---
+
+## Architecture Overview
+
+The application is modular and consists of four main components:
+
+1. **Data Preprocessing**  
+   The Enron dataset is cleaned, tokenized, and vectorized using TF-IDF.
+
+2. **Model Training**  
+   Two models are trained:
+   - Baseline logistic regression (`sklearn`)
+   - Differentially private neural network (`PyTorch + Opacus`)
+
+3. **Evaluation & Logging**  
+   Accuracy and privacy budget (ε) are tracked, saved to CSV, and visualized.
+
+4. **Web Interface**  
+   A `Streamlit` app lets users paste email content, select the model, and get predictions along with confidence levels.
+
+---
+
+## Installation
+
+1. **Clone the repository**
 
 ```bash
-📂 privacy_email_detector/
-├── 📁 models/               # Stored models (baseline + private)
-│   └── baseline_model.pkl
-│   └── vectorizer.pkl
-├── 📁 utils/                # Custom helper modules
-│   └── preprocessing.py
-├── 📄 train_model.py        # Model training script
-├── 📄 app.py                # Streamlit UI entrypoint
-├── 📄 requirements.txt      # All dependencies
-└── 📄 README.md             # This file
-```
+git clone https://github.com/Misael-R/Privacy-Preserving-LLM.git
+cd privacy-preserving-llm
+````
 
----
-
-## Baseline Training Pipeline
-
-1. **Preprocessing:**
-
-```python
-# utils/preprocessing.py
-import re
-
-def clean_text(text):
-    text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
-    return text.lower()
-```
-
-2. **Train & Save Model**
-
-```python
-# train_model.py
-import joblib, pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.feature_extraction.text import TfidfVectorizer
-from utils.preprocessing import clean_text
-
-df = pd.read_csv('enron_spam.csv')
-df['clean_text'] = df['text'].apply(clean_text)
-
-vectorizer = TfidfVectorizer(max_features=3000)
-X = vectorizer.fit_transform(df['clean_text'])
-y = df['label']
-
-clf = LogisticRegression()
-clf.fit(X, y)
-
-joblib.dump(clf, 'models/baseline_model.pkl')
-joblib.dump(vectorizer, 'models/vectorizer.pkl')
-```
-
----
-
-## Streamlit UI - `main.py`
-
-```python
-import streamlit as st
-import joblib
-from utils.preprocessing import clean_text
-
-clf = joblib.load('models/baseline_model.pkl')
-vectorizer = joblib.load('models/vectorizer.pkl')
-
-st.set_page_config(page_title="Email Threat Detector", layout="centered")
-st.title("🔐 Email Threat Detector")
-st.subheader("Detect Spam / Social Engineering Attempts")
-
-email_input = st.text_area("Paste the email content here:", height=250)
-
-if st.button("Analyze"):
-    if not email_input.strip():
-        st.warning("Please paste an email for analysis.")
-    else:
-        cleaned = clean_text(email_input)
-        vect = vectorizer.transform([cleaned])
-        pred = clf.predict(vect)[0]
-        prob = clf.predict_proba(vect)[0][pred]
-
-        label = "⚠️ Suspicious (Spam / Social Engineering)" if pred == 1 else "✅ Safe / Normal"
-        st.markdown(f"### Prediction: {label}")
-        st.markdown(f"**Confidence:** `{prob:.3f}`")
-```
-
----
-
-## Differential Privacy with Opacus
-
-### Why Opacus?
-
-Opacus adds **differentially private noise** to the gradients during training, ensuring data cannot be reverse-engineered.
-
-### Install Required Libraries
+2. **Create a virtual environment and activate it**
 
 ```bash
-pip install opacus torch scikit-learn
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 ```
 
-### Convert to PyTorch + Opacus Pipeline
+3. **Install dependencies**
 
-```python
-import torch
-from torch.utils.data import DataLoader, TensorDataset
-from torch import nn, optim
-from opacus import PrivacyEngine
-from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-from utils.preprocessing import clean_text
-
-# Load and preprocess dataset
-df = pd.read_csv('enron_spam.csv')
-df['clean_text'] = df['text'].apply(clean_text)
-
-vectorizer = TfidfVectorizer(max_features=2000)
-X = vectorizer.fit_transform(df['clean_text']).toarray()
-y = df['label'].values
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
-train_dataset = TensorDataset(torch.tensor(X_train).float(), torch.tensor(y_train))
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-
-# Define basic NN
-model = nn.Sequential(
-    nn.Linear(2000, 256),
-    nn.ReLU(),
-    nn.Linear(256, 2)
-)
-
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-criterion = nn.CrossEntropyLoss()
-
-# Apply PrivacyEngine
-privacy_engine = PrivacyEngine()
-model, optimizer, train_loader = privacy_engine.make_private(
-    module=model,
-    optimizer=optimizer,
-    data_loader=train_loader,
-    noise_multiplier=1.0,
-    max_grad_norm=1.0
-)
-
-# Training loop (simplified)
-model.train()
-for epoch in range(5):
-    for X_batch, y_batch in train_loader:
-        optimizer.zero_grad()
-        output = model(X_batch)
-        loss = criterion(output, y_batch)
-        loss.backward()
-        optimizer.step()
-    print(f"Epoch {epoch+1}, Loss: {loss.item():.4f}")
+```bash
+pip install -r requirements.txt
 ```
 
-Save the model with `torch.save(model.state_dict(), 'models/private_model.pt')`
+---
+
+## Running the App Locally
+
+1. **Preprocess the data and train the models**
+
+```bash
+python src/scripts/data_preprocessing.py
+python src/scripts/baseline_classifier.py
+python src/scripts/train_dp_model.py
+```
+
+2. **Launch the Streamlit app**
+
+```bash
+streamlit run src/main.py
+```
+
+3. **Go to** [http://localhost:8501](http://localhost:8501) in your browser.
 
 ---
 
-## Evaluation Plan
+## File Structure
 
-| Metric             | Purpose                                |
-| ------------------ | -------------------------------------- |
-| Accuracy / F1      | Compare Baseline vs Private Model      |
-| Privacy Budget (ε) | Demonstrate privacy guarantee of model |
-| LLM Explanation    | (Next step) Human-readable reasoning   |
+```
+📁 Privacy-Preserving-LLM/
+├── assets/
+│   └── enron_spam_data/
+├── src/
+│   ├── models/
+│   │   ├── baseline_model.pkl
+│   │   ├── private_model.pt
+│   │   ├── torch_model.py
+│   │   └── vectorizer.pkl
+│   ├── results/
+│   │   ├── baseline_classifier_results.txt
+│   │   ├── epsilon_accuracy_log.csv
+│   │   ├── epsilon_vs_accuracy.png
+│   │   ├── metrics.txt
+│   │   └── results.txt
+│   ├── scripts/
+│   │   ├── baseline_classifier.py
+│   │   ├── data_preprocessing.py
+│   │   ├── train_dp_model.py
+│   │   └── train_model.py
+│   └── utils/
+│       └── main.py
+├── requirements.txt
+├── LICENSE
+├── README.md
+└── .gitignore
+```
 
 ---
 
-## Next Phase: LangChain + LLM
+## Acknowledgements
 
-* Embed GPT responses for reasoning chain: "Why is this email suspicious?"
-* Inject metadata (sender, domain, time) for multimodal context
-* Provide explainability to user for trustworthiness
-
----
-
-## Tools Used
-
-| Tool         | Purpose                          |
-| ------------ | -------------------------------- |
-| Streamlit    | Interactive dashboard UI         |
-| Scikit-learn | Baseline model & preprocessing   |
-| Opacus       | Differential Privacy training    |
-| PyTorch      | Deep Learning backend for Opacus |
-| LangChain    | (Next) LLM integration           |
+* Enron Email Dataset – Carnegie Mellon University
+* [Opacus](https://opacus.ai/) – Differential Privacy for PyTorch
+* [Streamlit](https://streamlit.io/) – Lightweight ML interface
 
 ---
 
-## Future Deliverables
+## License
 
-* ✅ Baseline + UI
-* ✅ Private Training with Opacus
-* Multimodal Metadata
-* LangChain Integration
-* Deployment Option (Docker/Heroku)
+This project is licensed under the [APACHE License](./LICENSE).
 
 ---
 
