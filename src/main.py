@@ -55,6 +55,6 @@ if st.button("Analyze"):
                 pred = torch.argmax(probs, dim=1).item()
                 prob = probs[0][pred].item()
 
-        label = "⚠️ Suspicious (Spam / Social Engineering)" if pred == 1 else "✅ Safe / Normal"
+        label = "⚠️ Suspicious (Spam / Social Engineering)" if pred == 0 else "✅ Safe / Normal"
         st.markdown(f"### Prediction: {label}")
         st.markdown(f"**Confidence:** `{prob:.3f}`")
