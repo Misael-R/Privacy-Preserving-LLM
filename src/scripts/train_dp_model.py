@@ -1,103 +1,115 @@
 # train_dp_model.py
+
+import os
+import joblib
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
+import pandas as pd
+
 from opacus import PrivacyEngine
 from torch.utils.data import TensorDataset, DataLoader
-from sklearn.metrics import classification_report
-import joblib
-import numpy as np
+from sklearn.metrics import accuracy_score, f1_score, recall_score
+from sklearn.model_selection import StratifiedKFold
 
 from preprocessing import preprocess_enron
 from torch_model import PrivacyAwareEmailClassifier
-import pandas as pd
-import matplotlib.pyplot as plt
 
-epsilon_logs = []
+# === Configuration ===
+N_FOLDS = 5
+EPOCHS = 20
+BATCH_SIZE = 64
+LR = 1e-3
+DELTA = 1e-5
 
+# Try multiple noise multipliers to explore privacy/utility tradeoff
+NOISE_MULTIPLIERS = [0.5, 1.0, 2.0]
 
+# Prepare result directory
+os.makedirs("results", exist_ok=True)
 
-X_train, X_val, X_test, y_train, y_val, y_test = preprocess_enron()
+# Load and preprocess data
+X_train_all, X_val_all, X_test_all, y_train_all, y_val_all, y_test_all = preprocess_enron()
+X_all = X_train_all  # we'll do CV on the train+val split
+y_all = y_train_all
 
-X_train_tensor = torch.tensor(X_train.toarray()).float()
-y_train_tensor = torch.tensor(y_train.values).long()
-train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+# Convert entire feature set to numpy for CV indexing
+X_np = X_all.toarray()
+y_np = y_all.values
 
-model = PrivacyAwareEmailClassifier(input_dim=2000)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-criterion = nn.CrossEntropyLoss()
+# Prepare to collect logs
+logs = []
 
-privacy_engine = PrivacyEngine()
-model, optimizer, train_loader = privacy_engine.make_private(
-    module=model,
-    optimizer=optimizer,
-    data_loader=train_loader,
-    noise_multiplier=1.0,
-    max_grad_norm=1.0,
-)
+# Cross-validation loop
+skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=42)
+for noise in NOISE_MULTIPLIERS:
+    for fold, (train_idx, val_idx) in enumerate(skf.split(X_np, y_np), start=1):
+        # Build fold-specific datasets
+        X_train_fold = torch.tensor(X_np[train_idx]).float()
+        y_train_fold = torch.tensor(y_np[train_idx]).long()
+        X_val_fold   = torch.tensor(X_np[val_idx]).float()
+        y_val_fold   = torch.tensor(y_np[val_idx]).long()
 
-for epoch in range(10):
-    model.train()
-    for batch in train_loader:
-        x, y = batch
-        optimizer.zero_grad()
-        logits = model(x)
-        loss = criterion(logits, y)
-        loss.backward()
-        optimizer.step()
+        train_loader = DataLoader(
+            TensorDataset(X_train_fold, y_train_fold),
+            batch_size=BATCH_SIZE,
+            shuffle=True
+        )
 
-    epsilon = privacy_engine.get_epsilon(delta=1e-5)
+        # Instantiate model & components
+        model = PrivacyAwareEmailClassifier(input_dim=X_np.shape[1])
+        optimizer = optim.Adam(model.parameters(), lr=LR)
+        criterion = nn.CrossEntropyLoss()
 
-    # Evaluate on validation set
-    model.eval()
-    with torch.no_grad():
-        val_logits = model(torch.tensor(X_val.toarray()).float())
-        val_preds = torch.argmax(val_logits, dim=1).numpy()
-        val_accuracy = (val_preds == y_val.values).mean()
+        # Wrap with Opacus for DP-SGD
+        privacy_engine = PrivacyEngine()
+        model, optimizer, train_loader = privacy_engine.make_private(
+            module=model,
+            optimizer=optimizer,
+            data_loader=train_loader,
+            noise_multiplier=noise,
+            max_grad_norm=1.0
+        )
 
-    epsilon_logs.append({
-        "epoch": epoch + 1,
-        "epsilon": epsilon,
-        "accuracy": val_accuracy
-    })
+        # Training + logging per epoch
+        for epoch in range(1, EPOCHS + 1):
+            model.train()
+            for xb, yb in train_loader:
+                optimizer.zero_grad()
+                logits = model(xb)
+                loss = criterion(logits, yb)
+                loss.backward()
+                optimizer.step()
 
-    print(f"Epoch {epoch + 1} - epsilon = {epsilon:.2f}, Accuracy = {val_accuracy:.4f}")
+            # Compute current privacy budget
+            epsilon = privacy_engine.get_epsilon(delta=DELTA)
 
-# Save epsilon logs as CSV
-log_df = pd.DataFrame(epsilon_logs)
-log_df.to_csv("../results/epsilon_accuracy_log.csv", index=False)
+            # Evaluate on fold validation set
+            model.eval()
+            with torch.no_grad():
+                val_logits = model(X_val_fold)
+                val_preds = torch.argmax(val_logits, dim=1).numpy()
+            acc  = accuracy_score(y_val_fold, val_preds)
+            f1   = f1_score(y_val_fold, val_preds)
+            rec  = recall_score(y_val_fold, val_preds)
 
-# Plot ε vs accuracy
-plt.figure(figsize=(8, 5))
-plt.plot(log_df["epsilon"], log_df["accuracy"], marker="o", linestyle="-", color="blue", label="Accuracy")
-plt.xlabel("Privacy Budget (epsilon)", fontsize=12)
-plt.ylabel("Validation Accuracy", fontsize=12)
-plt.title("Privacy vs Accuracy", fontsize=14)
-plt.grid(True)
-plt.legend()
-plt.tight_layout()
-plt.savefig("../results/epsilon_vs_accuracy.png")
+            # Record log entry
+            logs.append({
+                "noise_multiplier": noise,
+                "fold": fold,
+                "epoch": epoch,
+                "epsilon": epsilon,
+                "delta": DELTA,
+                "accuracy": acc,
+                "f1_score": f1,
+                "recall": rec
+            })
 
+            print(f"[Noise {noise}] Fold {fold} Epoch {epoch} → Epsilon={epsilon:.2f}, Acc={acc:.3f}, F1={f1:.3f}, Recall={rec:.3f}")
 
-# Save model
-torch.save(model.state_dict(), "../models/private_model.pt")
+# Save consolidated log
+df_logs = pd.DataFrame(logs)
+df_logs.to_csv("../results/epsilon_metrics_log.csv", index=False)
 
-# Evaluation
-model.eval()
-X_test_tensor = torch.tensor(X_test.toarray()).float()
-y_test_tensor = torch.tensor(y_test.values).long()
-
-with torch.no_grad():
-    y_pred_probs = model(X_test_tensor)
-    y_preds = torch.argmax(y_pred_probs, dim=1).numpy()
-
-print("\nDP Model Evaluation on Test Set:")
-print(classification_report(y_test_tensor, y_preds))
-
-# Save metrics and epsilon
-with open("../results/metrics.txt", "w") as f:
-    f.write(f"Privacy Budget: epsilon = {epsilon:.2f}, delta = 1e-5\n\n")
-    f.write("=== Baseline Model ===\n")
-    f.write("=== DP Model ===\n")
-    f.write(classification_report(y_test_tensor, y_preds))
+print("\nAll folds & hyperparams complete. Logs saved to results/epsilon_metrics_log.csv")
