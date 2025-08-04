@@ -4,3 +4,4 @@ pandas
 joblib
 torch
 matplotlib
+seaborn

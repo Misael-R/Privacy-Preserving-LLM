@@ -11,6 +11,7 @@ joblib = "*"
 requests = "*"
 numpy = "*"
 matplotlib = "*"
+seaborn = "*"
 
 [dev-packages]
 
