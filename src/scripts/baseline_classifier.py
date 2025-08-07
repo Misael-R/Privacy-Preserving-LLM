@@ -52,6 +52,7 @@ for fold, (train_idx, val_idx) in enumerate(kf.split(X_all, y_all), start=1):
     })
 
     print(f"[Baseline] Fold {fold} → Acc={acc:.3f}, F1={f1:.3f}, Recall={rec:.3f}")
+    joblib.dump(clf, f"../models/logistic_regression_baseline_fold{fold}.pkl")
 
 # Save logs
 df_logs = pd.DataFrame(logs)

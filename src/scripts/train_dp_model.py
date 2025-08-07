@@ -26,9 +26,6 @@ DELTA = 1e-5
 # Try multiple noise multipliers to explore privacy/utility tradeoff
 NOISE_MULTIPLIERS = [0.5, 1.0, 2.0]
 
-# Prepare result directory
-os.makedirs("results", exist_ok=True)
-
 # Load and preprocess data
 X_train_all, X_val_all, X_test_all, y_train_all, y_val_all, y_test_all = preprocess_enron()
 X_all = X_train_all  # we'll do CV on the train+val split
@@ -107,7 +104,7 @@ for noise in NOISE_MULTIPLIERS:
             })
 
             print(f"[Noise {noise}] Fold {fold} Epoch {epoch} → Epsilon={epsilon:.2f}, Acc={acc:.3f}, F1={f1:.3f}, Recall={rec:.3f}")
-
+            torch.save(model.state_dict(), f"../models/privacy_model_noise{noise}_fold{fold}.pt")
 # Save consolidated log
 df_logs = pd.DataFrame(logs)
 df_logs.to_csv("../results/epsilon_metrics_log.csv", index=False)
