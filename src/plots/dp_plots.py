@@ -9,7 +9,7 @@ sns.set(style="whitegrid")
 os.makedirs("results", exist_ok=True)
 
 # Load logs
-df = pd.read_csv("..results/epsilon_metrics_log.csv")
+df = pd.read_csv("../results/epsilon_metrics_log.csv")
 
 # Average metrics per epsilon across folds and epochs
 grouped = df.groupby(["noise_multiplier", "epoch"]).agg({

@@ -5,10 +5,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-sns.set(style="whitegrid")
-os.makedirs("results", exist_ok=True)
+sns.set_theme(style="whitegrid")
 
-df = pd.read_csv("..results/baseline_metrics_log.csv")
+df = pd.read_csv("../results/baseline_metrics_log.csv")
 
 # === Accuracy ===
 plt.figure(figsize=(6, 4))
@@ -18,7 +17,7 @@ plt.ylim(0.5, 1.0)
 plt.ylabel("Accuracy")
 plt.xlabel("Fold")
 plt.tight_layout()
-plt.savefig("results/baseline_accuracy.png")
+plt.savefig("./baseline_accuracy.png")
 plt.close()
 
 # === F1 Score ===
@@ -29,7 +28,7 @@ plt.ylim(0.5, 1.0)
 plt.ylabel("F1 Score")
 plt.xlabel("Fold")
 plt.tight_layout()
-plt.savefig("results/baseline_f1.png")
+plt.savefig("./baseline_f1.png")
 plt.close()
 
 # === Recall ===
@@ -40,5 +39,5 @@ plt.ylim(0.5, 1.0)
 plt.ylabel("Recall")
 plt.xlabel("Fold")
 plt.tight_layout()
-plt.savefig("results/baseline_recall.png")
+plt.savefig("./baseline_recall.png")
 plt.close()
