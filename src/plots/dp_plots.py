@@ -6,7 +6,7 @@ import seaborn as sns
 import os
 
 sns.set(style="whitegrid")
-os.makedirs("results", exist_ok=True)
+os.makedirs("dp_results", exist_ok=True)
 
 # Load logs
 df = pd.read_csv("../results/epsilon_metrics_log.csv")
@@ -27,7 +27,7 @@ plt.xlabel("Epsilon (ε)")
 plt.ylabel("Accuracy")
 plt.legend(title="Noise Multiplier")
 plt.tight_layout()
-plt.savefig("results/plot_accuracy_vs_epsilon.png")
+plt.savefig("dp_results/plot_accuracy_vs_epsilon.png")
 plt.close()
 
 # === Plot F1-score vs Epsilon ===
@@ -38,7 +38,7 @@ plt.xlabel("Epsilon (ε)")
 plt.ylabel("F1-score")
 plt.legend(title="Noise Multiplier")
 plt.tight_layout()
-plt.savefig("results/plot_f1_vs_epsilon.png")
+plt.savefig("dp_results/plot_f1_vs_epsilon.png")
 plt.close()
 
 # === Plot Recall vs Epsilon ===
@@ -49,5 +49,5 @@ plt.xlabel("Epsilon (ε)")
 plt.ylabel("Recall")
 plt.legend(title="Noise Multiplier")
 plt.tight_layout()
-plt.savefig("results/plot_recall_vs_epsilon.png")
+plt.savefig("dp_results/plot_recall_vs_epsilon.png")
 plt.close()
