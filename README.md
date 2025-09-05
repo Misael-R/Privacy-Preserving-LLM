@@ -4,53 +4,59 @@
 
 ---
 
+
 ## Project Overview
 
-This project implements a **Privacy-Preserving Multimodal LLM Agent for Social Engineering Detection**. It provides a modular, interactive, and scalable prototype using:
+This repository implements a **Privacy-Preserving Multimodal LLM Agent for Social Engineering Detection**. The system is modular, interactive, and scalable, featuring:
 
-- **Streamlit** for the front-end UI
-- **Logistic Regression** as a baseline for social engineering classification
-- **TF-IDF** for feature extraction
-- **Opacus** for Differential Privacy in model training
-- **LangChain (Next)** for LLM-based threat interpretation
+- **Streamlit** for the web UI
+- **Logistic Regression** (scikit-learn) as a baseline classifier
+- **TF-IDF** (scikit-learn) for feature extraction
+- **PyTorch** neural network with **Opacus** for Differential Privacy (DP) training
+- **Visualization** with matplotlib and seaborn
 
-> **Goal:** Empower privacy-aware AI to detect spam/social engineering attacks while preserving user data confidentiality.
+**Goal:** Enable privacy-aware AI to detect spam/social engineering attacks while preserving user data confidentiality.
 
 ---
+
 
 ## Motivation
 
-Social engineering attacks are increasingly frequent and sophisticated. Because these attacks often exploit sensitive content, it's crucial to ensure detection models do not compromise user privacy. This project addresses this by integrating differential privacy into machine learning workflows for spam and social engineering detection.
+Social engineering attacks are increasingly frequent and sophisticated. Because these attacks often exploit sensitive content, it's crucial to ensure detection models do not compromise user privacy. This project addresses this by integrating differential privacy into machine learning workflows for spam and social engineering detection, using the Enron dataset as a benchmark.
 
 ---
+
 
 ## Project Objectives
 
-- Train robust classifiers to detect spam and socially engineered messages using the Enron dataset.
-- Apply differential privacy mechanisms with [Opacus](https://opacus.ai/) to prevent data leakage from training.
-- Build an interactive web application for real-time email threat analysis.
-- Log and visualize the trade-off between privacy budget (ε) and model performance.
+- Train robust classifiers to detect spam and socially engineered messages using the Enron dataset
+- Apply differential privacy mechanisms with [Opacus](https://opacus.ai/) to prevent data leakage from training
+- Build an interactive web application for real-time email threat analysis
+- Log and visualize the trade-off between privacy budget (ε) and model performance
 
 ---
+
 
 ## Architecture Overview
 
-The application is modular and consists of four main components:
+The application consists of the following main components:
 
 1. **Data Preprocessing**
-   - Cleans, tokenizes, and vectorizes the Enron dataset using TF-IDF.
+   - Cleans and vectorizes the Enron dataset using TF-IDF (see `src/utils/preprocessing.py`).
 
 2. **Model Training**
-   - Trains a baseline logistic regression model (scikit-learn).
-   - Trains a differentially private neural network (PyTorch + Opacus).
+   - Baseline: Trains a logistic regression model (`src/scripts/baseline_classifier.py`).
+   - Differential Privacy: Trains a neural network with DP-SGD using Opacus (`src/scripts/train_dp_model.py`).
 
 3. **Evaluation & Logging**
-   - Tracks accuracy and privacy budget (ε), saving results to CSV and visualizing trade-offs.
+   - Logs accuracy, F1, recall, and privacy budget (ε) to CSV files.
+   - Visualizes results with matplotlib/seaborn (`src/plots/`).
 
 4. **Web Interface**
-   - A Streamlit app allows users to paste email content, select models, and receive predictions and confidence metrics.
+   - Streamlit app (`src/main.py`) for real-time email threat analysis, model selection, and confidence display.
 
 ---
+
 
 ## Installation
 
@@ -61,8 +67,11 @@ The application is modular and consists of four main components:
    ```
 2. **Create and activate a virtual environment**
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python -m venv .venv
+   # On Windows:
+   .venv\Scripts\activate
+   # On macOS/Linux:
+   source .venv/bin/activate
    ```
 3. **Install dependencies**
    ```bash
@@ -71,12 +80,14 @@ The application is modular and consists of four main components:
 
 ---
 
+
 ## Running the App Locally
 
 1. **Preprocess the data and train the models**
    ```bash
-   python src/scripts/data_preprocessing.py
+   # Preprocess and vectorize Enron dataset
    python src/scripts/baseline_classifier.py
+   # Train the DP model (PyTorch + Opacus)
    python src/scripts/train_dp_model.py
    ```
 
@@ -89,31 +100,37 @@ The application is modular and consists of four main components:
 
 ---
 
+
 ## File Structure
 
 ```
-📁 Privacy-Preserving-LLM/
+Privacy-Preserving-LLM/
 ├── assets/
-│   └── enron_spam_data/
+│   └── enronSpamDataset/
 ├── src/
+│   ├── main.py
 │   ├── models/
 │   │   ├── baseline_model.pkl
 │   │   ├── private_model.pt
 │   │   ├── torch_model.py
 │   │   └── vectorizer.pkl
+│   ├── plots/
+│   │   ├── baseline_plots.py
+│   │   ├── dp_plots.py
+│   │   ├── make_figures.py
+│   │   └── ...
 │   ├── results/
-│   │   ├── baseline_classifier_results.txt
-│   │   ├── epsilon_accuracy_log.csv
-│   │   ├── epsilon_vs_accuracy.png
-│   │   ├── metrics.txt
-│   │   └── results.txt
+│   │   ├── baseline_metrics_log.csv
+│   │   ├── epsilon_metrics_log.csv
+│   │   └── ...
 │   ├── scripts/
 │   │   ├── baseline_classifier.py
-│   │   ├── data_preprocessing.py
 │   │   ├── train_dp_model.py
-│   │   └── train_model.py
+│   │   ├── train_model.py
+│   │   └── ...
 │   └── utils/
-│       └── main.py
+│       ├── preprocessing.py
+│       └── ...
 ├── requirements.txt
 ├── LICENSE
 ├── README.md
@@ -122,27 +139,33 @@ The application is modular and consists of four main components:
 
 ---
 
+
 ## Datasets
 
-- **Enron Email Dataset** ([Details](assets/enronSpamDataset/README.md)): Used for training and evaluating models.
+- **Enron Email Dataset** ([Details](assets/enronSpamDataset/README.md)): Used for training and evaluating models. Downloaded automatically via HuggingFace Datasets (`SetFit/enron_spam`).
 
 ---
+
 
 ## Acknowledgements
 
 - Enron Email Dataset – Carnegie Mellon University
 - [Opacus](https://opacus.ai/) – Differential Privacy for PyTorch
 - [Streamlit](https://streamlit.io/) – Lightweight ML interface
+- [HuggingFace Datasets](https://huggingface.co/docs/datasets) – Data loading
+- [scikit-learn](https://scikit-learn.org/) – ML models and preprocessing
+- [PyTorch](https://pytorch.org/) – Deep learning framework
 
 ---
 
+
 ## License
 
-This project is licensed under the [APACHE License](./LICENSE).
+This project is licensed under the [Apache License 2.0](./LICENSE).
 
 ---
 
 <p align="center">
-  <b>Data should be powerful, not dangerous.<br>
-  This project aims to prove privacy can enhance security.</b>
+   <b>Data should be powerful, not dangerous.<br>
+   This project aims to prove privacy can enhance security.</b>
 </p>
