@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-
+palette = sns.color_palette("mako_r", 6)
 sns.set(style="whitegrid")
 os.makedirs("dp_results", exist_ok=True)
 
@@ -21,7 +21,7 @@ grouped = df.groupby(["noise_multiplier", "epoch"]).agg({
 
 # === Plot Accuracy vs Epsilon ===
 plt.figure(figsize=(8, 6))
-sns.lineplot(data=grouped, x="epsilon", y="accuracy", hue="noise_multiplier", marker="o")
+sns.lineplot(data=grouped, x="epsilon", y="accuracy", hue="noise_multiplier", marker="o", palette=palette)
 plt.title("Accuracy vs Privacy Budget (Epsilon)", fontsize=14)
 plt.xlabel("Epsilon (ε)")
 plt.ylabel("Accuracy")
@@ -32,7 +32,7 @@ plt.close()
 
 # === Plot F1-score vs Epsilon ===
 plt.figure(figsize=(8, 6))
-sns.lineplot(data=grouped, x="epsilon", y="f1_score", hue="noise_multiplier", marker="s")
+sns.lineplot(data=grouped, x="epsilon", y="f1_score", hue="noise_multiplier", marker="s", palette=palette)
 plt.title("F1-score vs Privacy Budget (Epsilon)", fontsize=14)
 plt.xlabel("Epsilon (ε)")
 plt.ylabel("F1-score")
@@ -43,7 +43,7 @@ plt.close()
 
 # === Plot Recall vs Epsilon ===
 plt.figure(figsize=(8, 6))
-sns.lineplot(data=grouped, x="epsilon", y="recall", hue="noise_multiplier", marker="^")
+sns.lineplot(data=grouped, x="epsilon", y="recall", hue="noise_multiplier", marker="^", palette=palette)
 plt.title("Recall vs Privacy Budget (Epsilon)", fontsize=14)
 plt.xlabel("Epsilon (ε)")
 plt.ylabel("Recall")

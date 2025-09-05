@@ -8,7 +8,7 @@ import os
 sns.set_theme(style="whitegrid")
 
 os.makedirs("baseline_results", exist_ok=True)
-df = pd.read_csv("../results/baseline_metrics_log.csv")
+df = pd.read_csv("../results/baseline_metrics_log_2.csv")
 
 # === Accuracy ===
 plt.figure(figsize=(6, 4))

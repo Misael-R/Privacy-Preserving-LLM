@@ -1,0 +1,18 @@
+{
+  "model_name": "distilbert-base-uncased",
+  "max_len": 256,
+  "train_frac": 0.8,
+  "valid_frac": 0.1,
+  "batch_size": 32,
+  "epochs": 5,
+  "lr": 5e-05,
+  "delta": 1e-05,
+  "max_grad_norm": 1.0,
+  "noise_multiplier": 0.5,
+  "freeze_encoder": true,
+  "seed": 42,
+  "save_dir": "/kaggle/working/llm_models/distilbert_dp_cls",
+  "logs_csv": "/kaggle/working/llm_results/llm_dp_metrics.csv",
+  "temporal_logs_csv": "/kaggle/working/llm_results/llm_dp_metrics_temporal.csv",
+  "data_csv": "/kaggle/working/dataset/enron_spam_data.csv"
+}

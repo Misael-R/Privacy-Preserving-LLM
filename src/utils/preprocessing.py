@@ -1,6 +1,6 @@
 # utils/preprocessing.py
 
-import pandas as pd
+from datasets import load_dataset
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 import joblib
@@ -10,20 +10,15 @@ def clean_text(text):
     """Lowercases and removes non-alphanumeric characters from text."""
     text = str(text)
     text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
-    print(text)
     return text.lower()
 
-def clean_text2(text):
-    text = re.sub(r'\s+', ' ', text)
-    text = re.sub(r'\W+', ' ', text)
-    return text.lower()
-
-def preprocess_enron(path="../../assets/enronSpamDataset/enron_spam_data.csv"):
-    df = pd.read_csv(path)
-    # df = df.dropna()
-    df['Message'] = df['Message'].apply(clean_text)
-    y = df['Label'].astype(int)
-    X_text = df['Message']
+def preprocess_enron():
+    ds = load_dataset("SetFit/enron_spam")
+    df = ds["train"].to_pandas()
+    # The dataset has 'text' and 'label' columns
+    df['text'] = df['text'].apply(clean_text)
+    y = df['label'].astype(int)
+    X_text = df['text']
 
     vectorizer = TfidfVectorizer(max_features=2000)
     X = vectorizer.fit_transform(X_text)

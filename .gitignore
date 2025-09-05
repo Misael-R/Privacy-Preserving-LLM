@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Tensors
+*.safetensors
+
 # Distribution / packaging
 .Python
 build/

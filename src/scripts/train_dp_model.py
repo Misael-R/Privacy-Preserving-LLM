@@ -18,7 +18,7 @@ from torch_model import PrivacyAwareEmailClassifier
 
 # === Configuration ===
 N_FOLDS = 5
-EPOCHS = 20
+EPOCHS = 10
 BATCH_SIZE = 64
 LR = 1e-3
 DELTA = 1e-5

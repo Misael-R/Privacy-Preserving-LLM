@@ -49,7 +49,7 @@ def savefig(path):
 # ---------------------------
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-RESULTS_DIR = find_path([os.path.join(ROOT, "results"), os.path.join(ROOT, "../results")])
+RESULTS_DIR = find_path(["src/results", os.path.join(ROOT, "../results")])
 FIG_DIR = os.path.join(ROOT, "figures_original")
 ensure_dir(FIG_DIR)
 
@@ -92,7 +92,8 @@ dp_df["noise_multiplier"] = dp_df["noise_multiplier"].astype(float)
 def plot_baseline_metrics(df: pd.DataFrame, out_path: str):
     folds = df["fold"].values
     metrics = ["accuracy", "f1_score", "recall"]
-    colors = {"accuracy": "#1f77b4", "f1_score": "#2ca02c", "recall": "#ff7f0e"}
+    # Blue, Purple, Gray
+    colors = {"accuracy": "#1f77b4", "f1_score": "#7D3C98", "recall": "#7B7D7D"}
 
     plt.figure(figsize=(8, 5.5))
     for m in metrics:
@@ -157,10 +158,10 @@ def plot_dp_metrics_noise(dpn: pd.DataFrame, out_path: str):
     width = 0.25
 
     plt.figure(figsize=(9, 5.5))
-    # Bars
-    plt.bar(idx - width, dpn["accuracy_mean"], width, yerr=dpn["accuracy_std"], capsize=4, label="Accuracy", color="#1f77b4", alpha=0.9)
-    plt.bar(idx,         dpn["f1_mean"],       width, yerr=dpn["f1_std"],       capsize=4, label="F1-Score", color="#2ca02c", alpha=0.9)
-    plt.bar(idx + width, dpn["recall_mean"],   width, yerr=dpn["recall_std"],   capsize=4, label="Recall",   color="#ff7f0e", alpha=0.9)
+    # Green, Turquoise, Teal
+    plt.bar(idx - width, dpn["accuracy_mean"], width, yerr=dpn["accuracy_std"], capsize=4, label="Accuracy", color="#27AE60", alpha=0.9)
+    plt.bar(idx,         dpn["f1_mean"],       width, yerr=dpn["f1_std"],       capsize=4, label="F1-Score", color="#1ABC9C", alpha=0.9)
+    plt.bar(idx + width, dpn["recall_mean"],   width, yerr=dpn["recall_std"],   capsize=4, label="Recall",   color="#117864", alpha=0.9)
 
     # X labels
     labels = [f"Noise={nm:g}\n(ε≈{e:.2f})" for nm, e in zip(dpn["noise_multiplier"], dpn["epsilon_mean"])]
@@ -187,7 +188,8 @@ def plot_epsilon_tradeoff(dpg: pd.DataFrame, out_path: str):
     plt.figure(figsize=(8.5, 5.5))
     # For each noise, plot metrics vs epsilon_mean over epochs
     noises = sorted(dpg["noise_multiplier"].unique())
-    colors = {"accuracy_mean": "#1f77b4", "f1_mean": "#2ca02c", "recall_mean": "#ff7f0e"}
+    # Green, Turquoise, Teal
+    colors = {"accuracy_mean": "#27AE60", "f1_mean": "#1ABC9C", "recall_mean": "#117864"}
 
     for nm in noises:
         sub = dpg[dpg["noise_multiplier"] == nm].sort_values("epsilon_mean")
@@ -237,9 +239,16 @@ def plot_baseline_vs_dp(baseline: pd.DataFrame, dpn: pd.DataFrame, out_path: str
     width = 0.25
 
     plt.figure(figsize=(10, 5.5))
-    plt.bar(idx - width, acc_vals, width, label="Accuracy", color="#1f77b4")
-    plt.bar(idx,         f1_vals,  width, label="F1-Score", color="#2ca02c")
-    plt.bar(idx + width, rec_vals, width, label="Recall",   color="#ff7f0e")
+    # Baseline: blue, purple, gray; DP: green, turquoise, teal
+    baseline_colors = ["#1f77b4", "#7D3C98", "#7B7D7D"]
+    dp_colors = ["#27AE60", "#1ABC9C", "#117864"]
+    # For each bar group, use baseline colors for first (Baseline), then DP colors for others
+    acc_bar_colors = [baseline_colors[0]] + [dp_colors[0]] * (len(acc_vals) - 1)
+    f1_bar_colors  = [baseline_colors[1]] + [dp_colors[1]] * (len(f1_vals) - 1)
+    rec_bar_colors = [baseline_colors[2]] + [dp_colors[2]] * (len(rec_vals) - 1)
+    plt.bar(idx - width, acc_vals, width, label="Accuracy", color=acc_bar_colors)
+    plt.bar(idx,         f1_vals,  width, label="F1-Score", color=f1_bar_colors)
+    plt.bar(idx + width, rec_vals, width, label="Recall",   color=rec_bar_colors)
 
     plt.xticks(idx, labels, rotation=15, ha="right")
     all_vals = np.hstack([acc_vals, f1_vals, rec_vals])

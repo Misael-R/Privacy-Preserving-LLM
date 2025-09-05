@@ -3,13 +3,14 @@
 import joblib
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score, recall_score
+from sklearn.metrics import accuracy_score, f1_score, recall_score, confusion_matrix
 from sklearn.model_selection import StratifiedKFold
 import os
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 from preprocessing import preprocess_enron
-
 
 # === Load Data ===
 X_train, X_val, X_test, y_train, y_val, y_test = preprocess_enron()
@@ -18,18 +19,13 @@ X_train, X_val, X_test, y_train, y_val, y_test = preprocess_enron()
 X_all = X_train
 y_all = y_train
 
-# Convert sparse matrix to array if needed (or use proper sparse matrix indexing)
-# Either option 1: Convert to array (if memory allows)
-# X_all = X_all.toarray()
-
-# Or option 2: Keep as sparse but use proper indexing
-
 # === Cross-Validation ===
 kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 logs = []
+all_true = []
+all_pred = []
 
 for fold, (train_idx, val_idx) in enumerate(kf.split(X_all, y_all), start=1):
-    # For sparse matrices, use these indexing methods instead of iloc
     X_train_fold = X_all[train_idx]
     y_train_fold = y_all.iloc[train_idx]
     X_val_fold = X_all[val_idx]
@@ -51,6 +47,9 @@ for fold, (train_idx, val_idx) in enumerate(kf.split(X_all, y_all), start=1):
         "recall": rec
     })
 
+    all_true.extend(y_val_fold)
+    all_pred.extend(val_preds)
+
     print(f"[Baseline] Fold {fold} → Acc={acc:.3f}, F1={f1:.3f}, Recall={rec:.3f}")
     joblib.dump(clf, f"../models/logistic_regression_baseline_fold{fold}.pkl")
 
@@ -58,3 +57,15 @@ for fold, (train_idx, val_idx) in enumerate(kf.split(X_all, y_all), start=1):
 df_logs = pd.DataFrame(logs)
 os.makedirs("../results", exist_ok=True)  # Ensure directory exists
 df_logs.to_csv("../results/baseline_metrics_log.csv", index=False)
+
+# === Confusion Matrix ===
+os.makedirs("../plots/baseline_results", exist_ok=True)
+cm = confusion_matrix(all_true, all_pred)
+plt.figure(figsize=(5,4))
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=["Ham", "Spam"], yticklabels=["Ham", "Spam"])
+plt.xlabel("Predicted")
+plt.ylabel("True")
+plt.title("Baseline Confusion Matrix (CV)")
+plt.tight_layout()
+plt.savefig("../plots/baseline_results/baseline_confusion_matrix.png")
+plt.close()
