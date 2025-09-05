@@ -163,6 +163,10 @@ Privacy-Preserving-LLM/
 
 This project is licensed under the [Apache License 2.0](./LICENSE).
 
+## All project info
+
+Please address to the following GitHub Repository to find all the material and results [Repo](https://github.com/Misael-R/Privacy-Preserving-LLM/tree/main)
+
 ---
 
 <p align="center">
